@@ -1,5 +1,5 @@
 #!/bin/bash
-cat dijet_CT10_8TeV.input | sed "s/renscfact  1d0.*/#renscfact/ ; s/facscfact  1d0.*/#facscfact/;" > powheg.input-PS-save
+cat dijet_CT10_8TeV.input | sed "s/renscfact  1d0.*/#renscfact/ ; s/facscfact  1d0.*/#facscfact/; s/storeinfo_rwgt 1/compute_rwgt 1/;" > powheg.input-PS-save
 
 for i in {1..6}
 do
