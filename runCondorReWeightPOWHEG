@@ -33,7 +33,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LHAPDFSYS/lib:/cvmfs/cms.cern.ch/slc6_a
 export LHAPATH=/cvmfs/cms.cern.ch/slc6_amd64_gcc481/external/lhapdf/6.1.5/share/LHAPDF
 tar -xf {tarBall}
 rm {tarBall}
-mv {input} powheg.input 
+sed -e s/SEED/{SEED}/g {input} > powheg.input
 mv {lhe} pwgevents.lhe
 POWHEG-BOX-V2/dijet/pwhg_main
 tt="#new weight,renfact,facfact,pdf1,pdf2"
@@ -63,7 +63,7 @@ tar -cf {out} reWight.dat pwgevents-rwgt.lhe"""
     shN = self.jobName_+"{:03}".format(jobNumber)
     out = "out{:03}.tar".format(jobNumber)
     tmpSh = open(shName, "w")
-    tmpSh.write(self.tmpSh_.format(**{'tarBall':self.tarBall_.split("/")[-1],'input':self.input_.split("/")[-1], 'lhe':self.lhe_.split("/")[-1], 'out':out}))
+    tmpSh.write(self.tmpSh_.format(**{'SEED':jobNumber, 'tarBall':self.tarBall_.split("/")[-1],'input':self.input_.split("/")[-1], 'lhe':self.lhe_.split("/")[-1], 'out':out}))
     tmpSh.close()
     tmpSub = open(subName, "w")
     tmpSub.write(self.tmpSub_.format(**{'sh':shName, 'shN':shN, 'tarBall':self.tarBall_, 'input':self.input_, 'lhe':self.lhe_, 'out':out}))
