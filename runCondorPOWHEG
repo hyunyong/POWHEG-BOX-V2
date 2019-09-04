@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+
+import os, sys, time
+
+class condorSubmiter:
+  def __init__(self,jobName) :
+    self.time_ = time.strftime("_%d%b%Y_%HH%MM",time.localtime())
+    self.runDir_ = jobName+self.time_
+    self.jobName_ = jobName
+    os.mkdir(self.runDir_)
+    os.chdir(self.runDir_)
+    self.tmpSub_ = """executable              = {sh}
+universe                = vanilla
+accounting_group        = group_cms
+requirements            = ( HasSingularity == true )
+max_transfer_output_mb  = 5000
+request_memory          = 4G 
++SingularityImage       = "/cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el6:latest"
++SingularityBind        = "/cvmfs, /cms, /share"
+output                  = {shN}.out
+error                   = {shN}.err
+log                     = {shN}.log
+transfer_input_files    = {tarBall}, {input}
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files   = {out}
+queue"""
+    self.tmpSh_ = """#!/bin/bash
+export MYPWD=`pwd`
+export LHAPDFSYS=/cvmfs/cms.cern.ch/slc6_amd64_gcc481/external/lhapdf/6.1.5/
+export PATH=$PATH:$LHAPDFSYS/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LHAPDFSYS/lib:/cvmfs/cms.cern.ch/slc6_amd64_gcc481/external/gcc/4.8.1/lib64
+export LHAPATH=/cvmfs/cms.cern.ch/slc6_amd64_gcc481/external/lhapdf/6.1.5/share/LHAPDF
+tar -xf {tarBall}
+rm {tarBall}
+sed -e s/SEED/{SEED}/g {input} > powheg.input 
+POWHEG-BOX-V2/dijet/pwhg_main
+tar cf {out} *.lhe"""
+
+  def setTarBall(self, tarBall):
+    self.tarBall_ = tarBall
+
+  def setInput(self, inPut):
+    self.input_ = inPut
+
+  def submit(self, jobNumber):
+    shName = self.jobName_+"{:03}.sh".format(jobNumber)
+    subName = self.jobName_+"{:03}.sub".format(jobNumber)
+    shN = self.jobName_+"{:03}".format(jobNumber)
+    out = "out{:03}.tar".format(jobNumber)
+    tmpSh = open(shName, "w")
+    tmpSh.write(self.tmpSh_.format(**{'SEED':jobNumber, 'tarBall':self.tarBall_.split("/")[-1],'input':self.input_.split("/")[-1] ,'out':out}))
+    tmpSh.close()
+    tmpSub = open(subName, "w")
+    tmpSub.write(self.tmpSub_.format(**{'sh':shName, 'shN':shN, 'tarBall':self.tarBall_, 'input':self.input_, 'out':out}))
+    tmpSub.close()
+    os.system("chmod +x "+shName)
+    os.system("chmod +x "+subName)
+    os.system("condor_submit -batch-name "+self.jobName_+" "+subName)
+
+if __name__ == "__main__" :
+  iPath = os.getcwd()
+  #if os.getenv("CMSSW_BASE") == None: 
+  #  print "no CMSSW env"
+  #  exit()
+  cs = condorSubmiter(sys.argv[1])
+  
+  cs.setTarBall(iPath+"/powheg2.tar")
+  cs.setInput(iPath+"/dijet_CT10_8TeV.input")
+  seedOffSet = 301
+  for i in range(200):
+    cs.submit(seedOffSet+i)
+
+
