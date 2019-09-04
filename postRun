@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+import os, sys
+path = sys.argv[1]
+
+tmpList = [x for x in os.listdir(path) if x.endswith(".tar")]
+subList = [x for x in os.listdir(path) if x.endswith(".sub")]
+if len(tmpList) !=  len(subList):
+  print "job has not been finished"
+  exit()
+for f in tmpList:
+  if os.path.getsize(path+"/"+f) < 10000:
+    print f+" has not been finished"
+    exit()
+
+os.chdir(path)
+tList = [x for x in os.listdir(".") if x.endswith(".tar")]
+for x in tList:
+  print x, int(x[3:6])
+  num = int(x[3:6])
+  os.system("tar xf "+x)
+  if "pwgevents.lhe" in os.listdir("."):
+    os.system("mv pwgevents.lhe pwgeve_POWHEG2jet%03d.lhe"%num)
+  if "reWight.dat" in os.listdir("."):
+    os.system("mv reWight.dat newWeight%03d.dat"%num)
